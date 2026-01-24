@@ -1,0 +1,19 @@
+name: BingoPlugin
+version: 1.0.0
+main: fr.clashdesecoles.bingo.BingoPlugin
+api-version: 1.21
+author: Clash des Ecoles
+
+commands:
+  bingo:
+    description: Commande principale du plugin Bingo
+    usage: /bingo <sous-commande>
+    aliases: [bg]
+
+permissions:
+  bingo.admin:
+    description: Permission administrateur
+    default: op
+  bingo.player:
+    description: Permission joueur
+    default: true

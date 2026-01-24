@@ -1,17 +1,5 @@
 # BingoPlugin - Clash des Ecoles
 
-Plugin Minecraft Spigot refactorise selon vos specifications.
-
-## Structure
-
-- 1 fichier = 1 commande/event/manager
-- Messages externalises dans messages.yml
-- Code non commente
-- Pas d'emojis
-- Support des icones d'items via default.json
-- Teleportation automatique lors de la creation de partie
-- Commande /bingo reload pour recharger la config
-
 ## Fichiers de configuration
 
 ### config.yml
@@ -19,9 +7,6 @@ Configuration principale (API, scoreboard, tablist, timer, auto-teleport)
 
 ### messages.yml
 Tous les messages du plugin externalisés
-
-### item_icons.properties
-Mapping des items Minecraft vers les caracteres Unicode pour affichage dans le scoreboard
 
 ## Commandes
 
@@ -59,32 +44,3 @@ Mapping des items Minecraft vers les caracteres Unicode pour affichage dans le s
 - Message normal : chat d'equipe
 - `. message` : chat global
 - `! message` : chat admin (reserve aux admins)
-
-## Compilation
-
-```bash
-mvn clean package
-```
-
-## Installation
-
-1. Compiler le plugin
-2. Copier le JAR dans plugins/
-3. Configurer config.yml et messages.yml
-4. Placer le resource pack avec default.json pour les icones
-5. Redemarrer le serveur
-
-## Routes API
-
-Le plugin utilise toutes les routes API fournies.
-
-## Differences avec la version precedente
-
-- Code non commente
-- Messages externalises
-- 1 fichier par commande/event/manager
-- Pas d'emojis
-- Support des icones d'items
-- Teleportation auto activable
-- Commande reload
-- Commandes tp modifiees (admin vers joueur / joueur vers admin)

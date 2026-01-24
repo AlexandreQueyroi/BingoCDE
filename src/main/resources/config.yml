@@ -1,0 +1,37 @@
+api:
+  baseUrl: 'http://localhost:8080'
+  key: 'YEbBsp9HGPRFTH^nFR66R^!L!sI0F4sQ0ihpO8dG2FiLI&3J'
+  timeout: 5000
+
+scoreboard:
+  title: '&6&lBINGO - CLASH'
+  lines:
+    - '&7===================='
+    - '&eEquipe: &f{PLAYERTEAM}'
+    - '&ePoints: &f{TEAMPOINT}'
+    - '&7--------------------'
+    - '&eTemps restant: &f{TIMELEFT}'
+    - '&eMatch: &f{GAMENAME}'
+    - '&eAdversaire: &f{ADVERSAIRE}'
+    - '&7--------------------'
+    - '&eDate: &f{DATE}'
+    - '&7===================='
+
+tablist:
+  header:
+    - '&6&l================='
+    - '&6&l  BINGO - CLASH  '
+    - '&6&l================='
+    - ''
+    - '{BINGO}'
+  footer:
+    - ''
+    - '&7Temps: &f{TIMELEFT}'
+    - '&7Match: &f{GAMENAME}'
+
+timer:
+  durationSeconds: 5400
+
+auto-teleport: true
+
+debug: false

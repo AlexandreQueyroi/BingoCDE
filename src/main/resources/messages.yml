@@ -1,0 +1,130 @@
+prefix: '&6[BINGO]&r'
+
+commands:
+  no-permission: '&cVous n''avez pas la permission.'
+  player-only: '&cCette commande est reservee aux joueurs.'
+  reload-success: '&aConfiguration rechargee avec succes!'
+  
+team:
+  create-usage: '&cUsage: /bingo team create <nom> <couleur>'
+  create-success: '&aEquipe {team} creee avec succes!'
+  create-error: '&cErreur lors de la creation de l''equipe.'
+  invalid-color: '&cCouleur invalide.'
+  
+  add-usage: '&cUsage: /bingo team add <equipe> <joueur>'
+  add-success: '&a{player} a ete ajoute a l''equipe {team}'
+  add-error: '&cErreur lors de l''ajout du joueur.'
+  player-not-found: '&cJoueur introuvable.'
+  team-not-found: '&cEquipe introuvable.'
+  
+  remove-usage: '&cUsage: /bingo team remove <joueur>'
+  remove-success: '&a{player} a ete retire de l''equipe {team}'
+  remove-error: '&cErreur lors du retrait du joueur.'
+  player-no-team: '&cCe joueur n''est dans aucune equipe.'
+  
+  chat-usage: '&cUsage: /bingo team chat <equipe> <message>'
+  chat-sent: '&aMessage envoye a l''equipe {team}'
+  
+  join-message: '{player} &aa rejoint l''equipe {team}'
+  leave-message: '{player} &ea quitte l''equipe {team}'
+
+instance:
+  create-usage: '&cUsage: /bingo instance create <equipe1> <equipe2>'
+  create-success: '&aPartie creee avec succes! ID: {id}'
+  create-teams: '&e{team1} &eVS {team2}'
+  create-error: '&cErreur lors de la creation de la partie.'
+  
+  match-set-usage: '&cUsage: /bingo instance match set <nom>'
+  match-set-success: '&aNom du match defini: &f{name}'
+  match-set-error: '&cErreur lors de la definition du nom.'
+  no-game: '&cAucune partie en cours.'
+
+objectives:
+  roll-success: '&a{count} objectifs tires avec succes!'
+  roll-error: '&cErreur lors du tirage des objectifs.'
+  
+  validate-usage: '&cUsage: /bingo valid <objectifId> <equipe>'
+  validate-success: '&aObjectif valide pour {team}'
+  validate-broadcast: '{team} &aa valide: &f{objective}'
+  validate-error: '&cErreur lors de la validation.'
+  invalid-id: '&cID d''objectif invalide.'
+  objective-not-found: '&cObjectif introuvable.'
+  
+  reject-usage: '&cUsage: /bingo reject <objectifId> <equipe>'
+  reject-success: '&aObjectif rejete pour {team}'
+  reject-broadcast: '{team} &c- Objectif rejete: &f{objective}'
+  reject-error: '&cErreur lors du rejet.'
+
+timer:
+  start-broadcast: '&a&lChronometre demarre!'
+  start-error: '&cAucune partie a demarrer.'
+  
+  pause-broadcast: '&e&lPause!'
+  pause-error: '&cAucune partie en cours.'
+  
+  stop-broadcast: '&c&lArrete!'
+  stop-error: '&cAucune partie en cours.'
+  
+  warning-5min: '&e&lPlus que 5 minutes!'
+  warning-1min: '&c&lPlus qu''une minute!'
+  warning-30sec: '&c&lPlus que 30 secondes!'
+  
+  ended: '&c&lTEMPS ECOULE!'
+  ended-subtitle: '&eLa partie est terminee.'
+  
+  results-header: '&6&l======== RESULTATS ========'
+  results-team: '{team}&l: &f{points} points'
+  results-winner: '&eVainqueur: {team}'
+  results-draw: '&eEgalite parfaite!'
+  results-footer: '&6&l=========================='
+
+display:
+  show-success: '&aScoreboard affiche.'
+  hide-success: '&eScoreboard cache.'
+
+teleport:
+  to-player-usage: '&cUsage: /bingo tp <joueur>'
+  to-player-success: '&aTeleporte vers {player}'
+  to-player-error: '&cImpossible de teleporter.'
+  
+  player-to-admin-usage: '&cUsage: /bingo tphere <joueur>'
+  player-to-admin-success: '&a{player} a ete teleporte vers vous'
+  player-to-admin-error: '&cImpossible de teleporter le joueur.'
+  
+  world-not-found: '&cMonde introuvable.'
+  no-world-assigned: '&cPas de monde assigne a cette equipe.'
+
+export:
+  usage: '&cUsage: /bingo export <idPartie>'
+  success: '&aResultats exportes'
+  error: '&cErreur lors de l''exportation.'
+
+say:
+  usage: '&cUsage: /bingo say <message>'
+
+chat:
+  global-prefix: '&7[GLOBAL]&r'
+  admin-prefix: '&4[ADMIN]&c'
+  team-format: '{team} &f{player}: &r{message}'
+
+scoreboard:
+  title: '&6&lBINGO - CLASH'
+  
+game:
+  teleporting-players: '&eTeleportation des joueurs...'
+  players-teleported: '&a{count} joueurs teleportes.'
+
+hub:
+  success: '&aTeleporte au lobby.'
+  world-not-found: '&cLe monde hub n''existe pas.'
+
+world:
+  usage: '&cUsage: /bingo world <nomDuMonde>'
+  available: '&eMondes disponibles:'
+  success: '&aTeleporte dans le monde: &f{world}'
+  not-found: '&cLe monde {world} n''existe pas.'
+
+games:
+  list-header: '&eParties en cours:'
+  list-item: '&7- ID: &f{id} &7- {team1} vs {team2}'
+  list-empty: '&cAucune partie en cours.'
