@@ -83,20 +83,68 @@ public class GameManager {
     }
 
     public void saveNow() { saveToDiskQuiet(); }
-    
+
     public CompletableFuture<Game> createGame(String gameId, String team1Id, String team2Id) {
         return CompletableFuture.supplyAsync(() -> {
             Game game = new Game(gameId, team1Id, team2Id);
             games.put(gameId, game);
+            long seed = getRandomSeed();
+            game.setSeed(seed);
+
+            String world1Name = "game_" + game.getId() + "_" + team1Id;
+            String world2Name = "game_" + game.getId() + "_" + team2Id;
+
+            // 1. COPIE ASYNCHRONE DES FICHIERS (Ne bloque pas le serveur !)
+            java.io.File templateFolder = new java.io.File(Bukkit.getServer().getWorldContainer(), "bingo_template");
+            java.io.File world1Folder = new java.io.File(Bukkit.getServer().getWorldContainer(), world1Name);
+            java.io.File world2Folder = new java.io.File(Bukkit.getServer().getWorldContainer(), world2Name);
+
+            if (templateFolder.exists()) {
+                copyWorldFolder(templateFolder, world1Folder);
+                copyWorldFolder(templateFolder, world2Folder);
+            } else {
+                plugin.getLogger().warning("Le monde 'bingo_template' n'existe pas ! Le serveur va freeze pour générer les mondes.");
+            }
+
+            // 2. CHARGEMENT SYNCHRONE SUR LE MAIN THREAD
             Bukkit.getScheduler().runTask(plugin, () -> {
-                createGameWorlds(game);
-                // Auto-teleport removed: teleporting now happens on /bingo start only
+                // Comme les fichiers existent déjà, createWorld va juste charger les mondes instantanément.
+                World world1 = new WorldCreator(world1Name).environment(World.Environment.NORMAL).seed(seed).createWorld();
+                if (world1 != null) game.setWorld(team1Id, world1Name);
+
+                World world2 = new WorldCreator(world2Name).environment(World.Environment.NORMAL).seed(seed).createWorld();
+                if (world2 != null) game.setWorld(team2Id, world2Name);
+
                 saveToDiskQuiet();
             });
+
             return game;
         });
     }
-    
+
+    private void copyWorldFolder(java.io.File source, java.io.File target) {
+        try {
+            java.util.ArrayList<String> ignore = new java.util.ArrayList<>(java.util.Arrays.asList("uid.dat", "session.lock"));
+            if(!ignore.contains(source.getName())) {
+                if(source.isDirectory()) {
+                    if(!target.exists()) target.mkdirs();
+                    String[] files = source.list();
+                    if (files != null) {
+                        for (String file : files) {
+                            java.io.File srcFile = new java.io.File(source, file);
+                            java.io.File destFile = new java.io.File(target, file);
+                            copyWorldFolder(srcFile, destFile);
+                        }
+                    }
+                } else {
+                    java.nio.file.Files.copy(source.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        } catch (java.io.IOException e) {
+            plugin.getLogger().severe("Erreur lors de la copie du monde : " + e.getMessage());
+        }
+    }
+
     private void createGameWorlds(Game game) {
         long seed = getRandomSeed();
         game.setSeed(seed);
