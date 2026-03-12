@@ -41,6 +41,10 @@ public class IconUtil {
     
     public static String getLargeIcon(Material material) {
         String icon = getIcon(material);
-        return icon + icon;
+        // Strip color codes to keep width predictable
+        String clean = icon.replaceAll("§[0-9A-FK-ORa-fk-or]", "");
+        if (clean.isEmpty()) clean = "?";
+        // Return a doubled glyph sequence without colors; caller applies colors/styles
+        return clean + clean;
     }
 }

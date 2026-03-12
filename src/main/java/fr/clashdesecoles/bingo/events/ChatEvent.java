@@ -59,9 +59,22 @@ public class ChatEvent implements Listener {
                         teamPlayer.sendMessage(teamMessage);
                     }
                 }
+                // Spy: Admins with spy enabled also receive team messages
+                for (Player online : Bukkit.getOnlinePlayers()) {
+                    if (!team.getPlayers().contains(online.getUniqueId()) && online.hasPermission("bingo.admin")
+                            && plugin.getSpyManager() != null && plugin.getSpyManager().isSpying(online)) {
+                        online.sendMessage("§8[SPY] " + teamMessage);
+                    }
+                }
+                // Logging + stats
+                var game = plugin.getGameManager().getGameForTeam(team.getId());
+                if (game != null && plugin.getLoggingManager() != null) {
+                    plugin.getLoggingManager().logTeamChat(game.getId(), team.getId(), player.getUniqueId(), message);
+                }
+                if (plugin.getStatsManager() != null) {
+                    plugin.getStatsManager().increment(player.getUniqueId(), "team_messages");
+                }
             });
-            
-            plugin.getTeamManager().sendTeamMessage(team.getId(), message);
         }
     }
 }

@@ -29,6 +29,8 @@ public class BingoCommandRouter implements CommandExecutor, TabCompleter {
         this.subCommands.put("reload", new ReloadCommand(plugin));
         this.subCommands.put("hub", new HubCommand(plugin));
         this.subCommands.put("world", new WorldCommand(plugin));
+        this.subCommands.put("admin", new AdminCommand(plugin));
+        this.subCommands.put("spy", new SpyCommand(plugin));
     }
     
     @Override

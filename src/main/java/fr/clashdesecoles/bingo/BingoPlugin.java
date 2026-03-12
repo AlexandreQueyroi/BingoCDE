@@ -10,13 +10,15 @@ public class BingoPlugin extends JavaPlugin {
     
     private static BingoPlugin instance;
     
-    private ApiClient apiClient;
     private TeamManager teamManager;
     private GameManager gameManager;
     private ObjectiveManager objectiveManager;
     private ScoreboardManager scoreboardManager;
     private TimerManager timerManager;
     private AdvancementManager advancementManager;
+    private SpyManager spyManager;
+    private LoggingManager loggingManager;
+    private StatsManager statsManager;
     
     @Override
     public void onEnable() {
@@ -26,22 +28,16 @@ public class BingoPlugin extends JavaPlugin {
         MessageUtil.load(this);
         IconUtil.load(this);
         
-        String baseUrl = getConfig().getString("api.baseUrl");
-        String apiKey = getConfig().getString("api.key");
-        int timeout = getConfig().getInt("api.timeout", 5000);
-        
-        apiClient = new ApiClient(baseUrl, apiKey, timeout, getLogger());
-        
         teamManager = new TeamManager(this);
         gameManager = new GameManager(this);
+        gameManager.loadFromDisk();
         objectiveManager = new ObjectiveManager(this);
         scoreboardManager = new ScoreboardManager(this);
         timerManager = new TimerManager(this);
         advancementManager = new AdvancementManager(this);
-        
-        teamManager.loadTeamsFromAPI().thenRun(() -> {
-            getLogger().info("Teams loaded from API");
-        });
+        spyManager = new SpyManager();
+        loggingManager = new LoggingManager(this);
+        statsManager = new StatsManager(this);
         
         getCommand("bingo").setExecutor(new BingoCommandRouter(this));
         getCommand("bingo").setTabCompleter(new BingoTabCompleter(this));
@@ -49,6 +45,32 @@ public class BingoPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ChatEvent(this), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinEvent(this), this);
         getServer().getPluginManager().registerEvents(new PlayerQuitEvent(this), this);
+        getServer().getPluginManager().registerEvents(new ObjectiveValidationListener(this), this);
+        getServer().getPluginManager().registerEvents(new LoginRestrictionListener(this), this);
+        getServer().getPluginManager().registerEvents(new MessagesLogListener(this), this);
+        getServer().getPluginManager().registerEvents(new MotdListener(this), this);
+        
+        // Load teams from disk and ensure admin team exists
+        teamManager.loadFromDisk();
+        
+        // OP online admins on reload and default-enable spy for admins
+        getServer().getScheduler().runTask(this, () -> {
+            var admin = teamManager.getAdminTeam();
+            if (admin != null) {
+                for (var uuid : admin.getPlayers()) {
+                    var p = getServer().getPlayer(uuid);
+                    if (p != null) {
+                        if (!p.isOp()) p.setOp(true);
+                        spyManager.setDefaultIfAbsent(p.getUniqueId(), true);
+                    }
+                }
+            }
+            for (var p : getServer().getOnlinePlayers()) {
+                if (p.hasPermission("bingo.admin")) {
+                    spyManager.setDefaultIfAbsent(p.getUniqueId(), true);
+                }
+            }
+        });
         
         scoreboardManager.start();
         
@@ -68,6 +90,11 @@ public class BingoPlugin extends JavaPlugin {
         if (scoreboardManager != null) {
             scoreboardManager.stop();
         }
+
+        // Persist data
+        if (teamManager != null) teamManager.saveNow();
+        if (objectiveManager != null) objectiveManager.saveNow();
+        if (gameManager != null) gameManager.saveNow();
         
         getLogger().info("BingoPlugin disabled");
     }
@@ -80,10 +107,6 @@ public class BingoPlugin extends JavaPlugin {
     
     public static BingoPlugin getInstance() {
         return instance;
-    }
-    
-    public ApiClient getApiClient() {
-        return apiClient;
     }
     
     public TeamManager getTeamManager() {
@@ -109,4 +132,12 @@ public class BingoPlugin extends JavaPlugin {
     public AdvancementManager getAdvancementManager() {
         return advancementManager;
     }
+
+    public SpyManager getSpyManager() {
+        return spyManager;
+    }
+
+    public LoggingManager getLoggingManager() { return loggingManager; }
+
+    public StatsManager getStatsManager() { return statsManager; }
 }

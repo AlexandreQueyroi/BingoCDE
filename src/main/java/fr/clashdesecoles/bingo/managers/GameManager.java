@@ -2,6 +2,8 @@ package fr.clashdesecoles.bingo.managers;
 import com.google.gson.*;
 import fr.clashdesecoles.bingo.BingoPlugin;
 import fr.clashdesecoles.bingo.models.Game;
+import fr.clashdesecoles.bingo.models.Team;
+import fr.clashdesecoles.bingo.models.Objective;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import java.util.*;
@@ -9,35 +11,89 @@ import java.util.concurrent.CompletableFuture;
 
 public class GameManager {
     private final BingoPlugin plugin;
-    private final Map<String, Game> games;
+    private final java.util.concurrent.ConcurrentMap<String, Game> games;
+    private final java.io.File gamesFile;
     
     public GameManager(BingoPlugin plugin) {
         this.plugin = plugin;
-        this.games = new HashMap<>();
+        this.games = new java.util.concurrent.ConcurrentHashMap<>();
+        this.gamesFile = new java.io.File(plugin.getDataFolder(), "games.json");
     }
+
+    public void loadFromDisk() {
+        try {
+            if (!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
+            if (!gamesFile.exists()) return;
+            String json = new String(java.nio.file.Files.readAllBytes(gamesFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            games.clear();
+            if (root.has("games") && root.get("games").isJsonArray()) {
+                for (JsonElement el : root.getAsJsonArray("games")) {
+                    JsonObject go = el.getAsJsonObject();
+                    String id = go.get("id").getAsString();
+                    String t1 = go.get("team1Id").getAsString();
+                    String t2 = go.get("team2Id").getAsString();
+                    Game g = new Game(id, t1, t2);
+                    if (go.has("name")) g.setName(go.get("name").getAsString());
+                    if (go.has("seed")) g.setSeed(go.get("seed").getAsLong());
+                    if (go.has("state")) {
+                        try { g.setState(Game.GameState.valueOf(go.get("state").getAsString())); } catch (Exception ignored) {}
+                    }
+                    if (go.has("worlds")) {
+                        JsonObject ws = go.get("worlds").getAsJsonObject();
+                        for (String key : ws.keySet()) {
+                            g.setWorld(key, ws.get(key).getAsString());
+                        }
+                    }
+                    games.put(id, g);
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to load games.json: " + e.getMessage());
+        }
+    }
+
+    private synchronized void saveToDiskQuiet() {
+        try {
+            if (!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
+            JsonObject root = new JsonObject();
+            JsonArray arr = new JsonArray();
+            for (Game g : games.values()) {
+                JsonObject go = new JsonObject();
+                go.addProperty("id", g.getId());
+                go.addProperty("name", g.getName());
+                go.addProperty("team1Id", g.getTeam1Id());
+                go.addProperty("team2Id", g.getTeam2Id());
+                go.addProperty("seed", g.getSeed());
+                go.addProperty("state", g.getState().name());
+                JsonObject ws = new JsonObject();
+                for (Map.Entry<String, String> e : g.getWorlds().entrySet()) {
+                    ws.addProperty(e.getKey(), e.getValue());
+                }
+                go.add("worlds", ws);
+                arr.add(go);
+            }
+            root.add("games", arr);
+            try (java.io.Writer w = new java.io.OutputStreamWriter(new java.io.FileOutputStream(gamesFile), java.nio.charset.StandardCharsets.UTF_8)) {
+                new GsonBuilder().setPrettyPrinting().create().toJson(root, w);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to save games.json: " + e.getMessage());
+        }
+    }
+
+    public void saveNow() { saveToDiskQuiet(); }
     
     public CompletableFuture<Game> createGame(String gameId, String team1Id, String team2Id) {
         return CompletableFuture.supplyAsync(() -> {
-            JsonObject body = new JsonObject();
-            body.addProperty("team1", team1Id);
-            body.addProperty("team2", team2Id);
-            
-            JsonElement response = plugin.getApiClient().post("/games/" + gameId, body);
-            
-            if (response != null) {
-                Game game = new Game(gameId, team1Id, team2Id);
-                games.put(gameId, game);
-                
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    createGameWorlds(game);
-                    if (plugin.getConfig().getBoolean("auto-teleport", true)) {
-                        teleportTeams(game);
-                    }
-                });
-                
-                return game;
-            }
-            return null;
+            Game game = new Game(gameId, team1Id, team2Id);
+            games.put(gameId, game);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                createGameWorlds(game);
+                // Auto-teleport removed: teleporting now happens on /bingo start only
+                saveToDiskQuiet();
+            });
+            return game;
         });
     }
     
@@ -90,29 +146,15 @@ public class GameManager {
     }
     
     private long getRandomSeed() {
-        try {
-            JsonElement response = plugin.getApiClient().get("/seeds/randomizer");
-            if (response != null && response.isJsonObject()) {
-                JsonObject seedObj = response.getAsJsonObject();
-                if (seedObj.has("seed")) {
-                    return seedObj.get("seed").getAsLong();
-                }
-            }
-        } catch (Exception e) {
-        }
-        return System.currentTimeMillis();
+        return new java.util.Random().nextLong();
     }
     
     public CompletableFuture<Boolean> setMatchName(String gameId, String matchName) {
         return CompletableFuture.supplyAsync(() -> {
-            JsonObject body = new JsonObject();
-            body.addProperty("name", matchName);
-            
-            JsonElement response = plugin.getApiClient().patch("/games/" + gameId, body);
-            
-            if (response != null) {
-                Game game = games.get(gameId);
-                if (game != null) game.setName(matchName);
+            Game game = games.get(gameId);
+            if (game != null) {
+                game.setName(matchName);
+                saveToDiskQuiet();
                 return true;
             }
             return false;
@@ -123,6 +165,7 @@ public class GameManager {
         Game game = games.get(gameId);
         if (game != null && game.getState() != Game.GameState.FINISHED) {
             game.start();
+            saveToDiskQuiet();
             return true;
         }
         return false;
@@ -164,8 +207,37 @@ public class GameManager {
     }
     
     public CompletableFuture<JsonElement> exportGameResults(String gameId) {
-        return CompletableFuture.supplyAsync(() -> 
-            plugin.getApiClient().get("/games/" + gameId + "/result")
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            Game game = games.get(gameId);
+            if (game == null) return null;
+            JsonObject root = new JsonObject();
+            root.addProperty("gameId", game.getId());
+            root.addProperty("name", game.getName() == null ? "" : game.getName());
+            root.addProperty("state", game.getState().name());
+            root.addProperty("seed", game.getSeed());
+            JsonArray teamsArr = new JsonArray();
+            for (String tid : new String[]{game.getTeam1Id(), game.getTeam2Id()}) {
+                Team t = plugin.getTeamManager().getTeam(tid);
+                JsonObject to = new JsonObject();
+                to.addProperty("id", tid);
+                to.addProperty("name", t != null ? t.getName() : tid);
+                to.addProperty("points", t != null ? t.getPoints() : 0);
+                teamsArr.add(to);
+            }
+            root.add("teams", teamsArr);
+            // Add objectives status summary per team
+            JsonObject summary = new JsonObject();
+            for (String tid : new String[]{game.getTeam1Id(), game.getTeam2Id()}) {
+                int success = 0;
+                for (Objective obj : plugin.getObjectiveManager().getGameObjectives(game.getId())) {
+                    if (plugin.getObjectiveManager().getObjectiveStatus(tid, obj.getId()) == Objective.ObjectiveStatus.SUCCESS) {
+                        success++;
+                    }
+                }
+                summary.addProperty(tid, success);
+            }
+            root.add("successByTeam", summary);
+            return root;
+        });
     }
 }

@@ -32,10 +32,18 @@ public class InstanceCommand implements CommandExecutor {
                 listTeams(sender);
                 return true;
             }
+            if (team1.isAdmin()) {
+                sender.sendMessage("§cL'équipe admin ne peut pas jouer.");
+                return true;
+            }
             
             if (team2 == null) {
                 sender.sendMessage("§cEquipe '" + args[2] + "' introuvable.");
                 listTeams(sender);
+                return true;
+            }
+            if (team2.isAdmin()) {
+                sender.sendMessage("§cL'équipe admin ne peut pas jouer.");
                 return true;
             }
             

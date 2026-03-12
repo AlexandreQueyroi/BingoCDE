@@ -44,7 +44,7 @@ public class ApiClient {
     public JsonElement delete(String endpoint) {
         return request("DELETE", endpoint, null);
     }
-    
+
     private JsonElement request(String method, String endpoint, JsonObject body) {
         HttpURLConnection connection = null;
         
@@ -56,6 +56,7 @@ public class ApiClient {
             connection.setRequestMethod(method);
             connection.setRequestProperty("Authorization", "Bearer " + apiKey);
             connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
             connection.setConnectTimeout(timeout);
             connection.setReadTimeout(timeout);
             
@@ -71,19 +72,19 @@ public class ApiClient {
             
             int responseCode = connection.getResponseCode();
             
-            BufferedReader reader;
-            if (responseCode >= 200 && responseCode < 300) {
-                reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-            } else {
-                reader = new BufferedReader(new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8));
-            }
+            java.io.InputStream rawStream = (responseCode >= 200 && responseCode < 300)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
             
             StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            if (rawStream != null) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(rawStream, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                }
             }
-            reader.close();
             
             String responseStr = response.toString();
             

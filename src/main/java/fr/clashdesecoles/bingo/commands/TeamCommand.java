@@ -82,13 +82,26 @@ public class TeamCommand implements CommandExecutor {
     }
     
     private void handleAdd(CommandSender sender, String teamName, String playerName) {
-        Player target = Bukkit.getPlayer(playerName);
-        
-        if (target == null) {
+        // Try online first
+        Player online = Bukkit.getPlayer(playerName);
+        java.util.UUID targetUuid = null;
+        String targetName = playerName;
+        if (online != null) {
+            targetUuid = online.getUniqueId();
+            targetName = online.getName();
+        } else {
+            // Resolve offline player by name, even if never joined
+            org.bukkit.OfflinePlayer off = Bukkit.getOfflinePlayer(playerName);
+            if (off != null) {
+                targetUuid = off.getUniqueId();
+                if (off.getName() != null) targetName = off.getName();
+            }
+        }
+        if (targetUuid == null) {
             sender.sendMessage(MessageUtil.get("team.player-not-found"));
             return;
         }
-        
+
         Team team = plugin.getTeamManager().getTeam(teamName);
         if (team == null) {
             sender.sendMessage(MessageUtil.get("team.team-not-found"));
@@ -98,15 +111,18 @@ public class TeamCommand implements CommandExecutor {
             }
             return;
         }
-        
-        plugin.getTeamManager().addPlayer(teamName, target.getUniqueId()).thenAccept(success -> {
+        final String fTargetName = targetName;
+        final java.util.UUID fTargetUuid = targetUuid;
+        plugin.getTeamManager().addPlayer(teamName, fTargetUuid).thenAccept(success -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (success) {
                     var map = new HashMap<String, String>();
-                    map.put("player", target.getName());
+                    map.put("player", fTargetName);
                     map.put("team", team.getColoredName());
                     sender.sendMessage(MessageUtil.get("team.add-success", map));
-                    target.sendMessage(MessageUtil.get("team.join-message", map));
+                    if (online != null) {
+                        online.sendMessage(MessageUtil.get("team.join-message", map));
+                    }
                 } else {
                     sender.sendMessage(MessageUtil.get("team.add-error"));
                 }
@@ -144,7 +160,9 @@ public class TeamCommand implements CommandExecutor {
             return;
         }
         
-        plugin.getTeamManager().sendTeamMessage(teamName, message);
+        // Prefix with Admin label as requested
+        String msg = "§cAdmin: " + message;
+        plugin.getTeamManager().sendTeamMessage(teamName, msg);
         var map = new HashMap<String, String>();
         map.put("team", team.getColoredName());
         sender.sendMessage(MessageUtil.get("team.chat-sent", map));

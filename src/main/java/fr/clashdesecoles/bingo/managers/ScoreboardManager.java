@@ -185,6 +185,7 @@ public class ScoreboardManager {
         for (String line : headerLines) {
             String processed = replacePlaceholders(line, placeholders);
             processed = ChatColor.translateAlternateColorCodes('&', processed);
+            processed = fr.clashdesecoles.bingo.utils.TextUtil.center(processed, 36);
             header.append(processed).append("\n");
         }
         
@@ -193,6 +194,7 @@ public class ScoreboardManager {
         for (String line : footerLines) {
             String processed = replacePlaceholders(line, placeholders);
             processed = ChatColor.translateAlternateColorCodes('&', processed);
+            processed = fr.clashdesecoles.bingo.utils.TextUtil.center(processed, 36);
             footer.append(processed).append("\n");
         }
         
